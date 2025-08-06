@@ -46,12 +46,10 @@ if st.session_state.entries:
         cols[1].write(f"¥{row['営収']:,}")
         cols[2].write(row["出庫時刻"])
         cols[3].write(row["帰庫時刻"])
-        # 削除ボタンを押したら該当行をセッションステートから削除し、再レンダリングを停止
         if cols[4].button("削除", key=f"del_{idx}"):
             st.session_state.entries.pop(idx)
             st.stop()
 
-    # 再度 DataFrame を生成
     df = pd.DataFrame(st.session_state.entries)
 
     # --- 深夜・超過時間の自動計算 ---
@@ -64,7 +62,6 @@ if st.session_state.entries:
             in_time += timedelta(days=1)
         total_hours = (in_time - out_time).total_seconds() / 3600
 
-        # 深夜時間（22:00～翌5:00）計算
         night_h = 0.0
         current = out_time
         while current < in_time:
@@ -81,7 +78,7 @@ if st.session_state.entries:
     st.markdown("### 📊 入力済みデータ")
     st.dataframe(df, use_container_width=True)
 
-    # --- 給与計算と PDF 出力は「営収」列がある場合のみ ---
+    # --- 給与計算と PDF 出力 ---
     if "営収" in df.columns and not df.empty:
         total_sales  = df["営収"].sum()
         night_hours  = df["深夜時間(h)"].sum()
@@ -104,7 +101,6 @@ if st.session_state.entries:
         deduction = int(total_pay * 0.115)
         take_home = total_pay - deduction
 
-        # 給与結果表示
         st.markdown("### 💰 給与予測結果")
         st.write(f"総営収：¥{total_sales:,}")
         st.write(f"歩合給（基準額）：¥{base_pay:,}")
@@ -114,21 +110,32 @@ if st.session_state.entries:
         st.write(f"控除（11.5%）：¥{deduction:,}")
         st.success(f"👉 手取り見込み：¥{take_home:,}")
 
-        # --- PDF 出力機能 ---
+        # --- PDF 出力機能（未完結部：必要に応じて追加可能） ---
         def generate_pdf(df):
             buf = BytesIO()
             pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
             c = canvas.Canvas(buf, pagesize=A4)
             width, height = A4
             c.setFont('HeiseiKakuGo-W5', 12)
-            # ヘッダー
+
             c.drawString(50, height-50, "🚖 タクシー給与レポート")
-            # 対象期間
             start = df["日付"].min()
             end   = df["日付"].max()
             c.drawString(50, height-80, f"対象期間：{start} ～ {end}")
-            # 金額詳細
+
             ypos = height-120
             c.drawString(50, ypos, f"総営収：¥{total_sales:,}"); ypos -= 20
             c.drawString(50, ypos, f"歩合給：¥{base_pay:,}"); ypos -= 20
-            c.d
+            c.drawString(50, ypos, f"深夜手当：¥{night_pay:,}（{night_hours:.1f}h）"); ypos -= 20
+            c.drawString(50, ypos, f"超過手当：¥{over_pay:,}（{over_hours:.1f}h）"); ypos -= 20
+            c.drawString(50, ypos, f"控除：¥{deduction:,}"); ypos -= 20
+            c.drawString(50, ypos, f"手取り見込み：¥{take_home:,}")
+
+            c.showPage()
+            c.save()
+            buf.seek(0)
+            return buf
+
+        if st.button("📄 PDFレポートを生成"):
+            pdf_data = generate_pdf(df)
+            st.download_button("⬇️ ダウンロード", data=pdf_data, file_name="salary_report.pdf", mime="application/pdf")
