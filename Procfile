@@ -1,1 +1,2 @@
-web: streamlit run salary_predictor_final.py --server.port=$PORT
+web: streamlit run salary_predictor_app.py
+
