@@ -7,7 +7,7 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
-st.title("🚖 タクシー給与予測アプリ（フォーム＋削除＋PDF出力）")
+st.title("🚖 タクシー給与予測アプリ")
 
 # --- 入力フォーム ---
 st.markdown("### 📋 日次データ入力フォーム")
