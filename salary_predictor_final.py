@@ -10,7 +10,7 @@ from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 st.title("🚖 タクシー給与予測アプリ")
 
 # --- 入力フォーム ---
-st.markdown("### 📋 日次データ入力フォーム")
+st.markdown("### 📋 データ入力フォーム")
 with st.form("input_form"):
     col1, col2, col3, col4 = st.columns(4)
     with col1:
